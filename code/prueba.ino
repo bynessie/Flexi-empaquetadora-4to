@@ -1,28 +1,23 @@
 #include "HX711.h"
 
-#define DOUT 4
-#define CLK 5
+const int LOADCELL_DOUT_PIN = 16;
+const int LOADCELL_SCK_PIN  = 4;
 
 HX711 scale;
 
-float calibration_factor = 2280.0;
-
 void setup() {
-
   Serial.begin(115200);
 
-  scale.begin(DOUT, CLK);
-  scale.set_scale(calibration_factor);
+  scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
   scale.tare();
 
-  Serial.println("Bascula lista");
+  Serial.println("HX711 listo");
 }
 
 void loop() {
 
-  Serial.print("Peso: ");
-  Serial.print(scale.get_units(5));
-  Serial.println(" g");
+  Serial.print("Lectura: ");
+  Serial.println(scale.get_units());
 
   delay(500);
 }
