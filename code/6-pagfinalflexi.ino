@@ -105,10 +105,14 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
         .history-card { background: #ffffff; border-radius: 15px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-top: 20px; }
         .history-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; text-align: left; }
         .history-table th { background: #f1f5f9; color: #475569; padding: 10px; font-weight: 600; border-bottom: 2px solid #cbd5e1; }
-        .history-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; color: #334155; }
-        .status-badge { font-weight: bold; padding: 3px 8px; border-radius: 5px; text-transform: uppercase; font-size: 0.8rem; }
+        .history-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
+        .status-badge { font-weight: bold; padding: 3px 8px; border-radius: 5px; text-transform: uppercase; font-size: 0.8rem; display: inline-block; }
         .badge-ok { background: #dcfce7; color: #16a34a; }
         .badge-error { background: #fee2e2; color: #dc2626; }
+
+        /* Botón de recibo */
+        .btn-recibo { background-color: #334155; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: background 0.2s; }
+        .btn-recibo:hover { background-color: #dc2626; }
 
         /* --- RECUADRO FIJO DEL SEMÁFORO --- */
         .tower-card { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ffffff; border-radius: 15px; padding: 25px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); height: 380px; width: 100%; max-height: 380px; }
@@ -121,14 +125,37 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
         
         #estadoText { margin-top: 20px; font-weight: bold; font-size: 1.2rem; text-align: center; color: #0f172a; min-height: 40px; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        /* --- IMPRESORA DE TICKETS --- */
+        /* --- IMPRESORA DE TICKETS EN LIVE --- */
         .ticket-box { background: #ffffff; color: #1e293b; padding: 15px; border-radius: 10px; font-family: 'Courier New', monospace; font-size: 0.8rem; margin-top: 15px; border-left: 5px solid #dc2626; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+
+        /* --- VENTANA MODAL (ETIQUETA) --- */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background-color: white; padding: 20px; border-radius: 10px; width: 350px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); text-align: center; }
+        
+        /* Diseño de la etiqueta simulada */
+        .etiqueta-print { border: 3px double #000; padding: 15px; background: white; font-family: 'Courier New', monospace; text-align: left; color: black; margin-bottom: 15px; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); }
+        .etiqueta-print h2 { text-align: center; font-size: 1.3rem; border-bottom: 2px dashed #000; padding-bottom: 5px; margin-bottom: 10px; color: black; }
+        .etiqueta-print .item { margin: 6px 0; font-size: 0.9rem; }
+        .etiqueta-print .barcode { text-align: center; font-size: 1.8rem; letter-spacing: 3px; margin-top: 15px; font-family: 'Arial', sans-serif; font-weight: bold; border-top: 1px dashed #000; padding-top: 8px;}
+        
+        .modal-actions { display: flex; gap: 10px; justify-content: center; }
+        .btn-print { background-color: #16a34a; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-close { background-color: #dc2626; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+        /* --- ESTILOS DE IMPRESIÓN EXCLUSIVOS --- */
+        @media print {
+            body * { visibility: hidden; }
+            #areaImpresion, #areaImpresion * { visibility: visible; }
+            #areaImpresion { position: absolute; left: 0; top: 0; width: 100%; border: none; }
+            .modal, .modal-content { background: none; box-shadow: none; display: block !important; position: absolute; left:0; top:0; }
+            .modal-actions, .btn-close { display: none !important; }
+        }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Flexi Sistema Automático de Recolección y Empaquetado</h1>
+        <h1>Sistema Automático de Recolección y Empaquetado</h1>
         <div class="sub">Monitoreo del Conveyor, Control de Calidad y Sellado</div>
     </header>
 
@@ -182,6 +209,7 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
                             <th>Peso Salida</th>
                             <th>Diferencia</th>
                             <th>Dictamen Final</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="historyBody">
@@ -199,6 +227,28 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
                     <div class="light green" id="lightGreen"></div>
                 </div>
                 <div id="estadoText">ESPERANDO</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalTicket" class="modal">
+        <div class="modal-content">
+            <div class="etiqueta-print" id="areaImpresion">
+                <h2>CONTROL DE CALIDAD</h2>
+                <div class="item"><strong>SISTEMA:</strong> Conveyor Flexi</div>
+                <div class="item"><strong>ID LOTE:</strong> <span id="lblLote">-</span></div>
+                <div class="item"><strong>FECHA:</strong> <span id="lblFecha">-</span></div>
+                <div class="item">----------------------------</div>
+                <div class="item"><strong>P. ENTRADA:</strong> <span id="lblEntrada">0.0 g</span></div>
+                <div class="item"><strong>P. SALIDA:</strong> <span id="lblSalida">0.0 g</span></div>
+                <div class="item"><strong>DIFERENCIA:</strong> <span id="lblDif">0.0 g</span></div>
+                <div class="item">----------------------------</div>
+                <div class="item"><strong>DICTAMEN:</strong> <span id="lblDictamen">-</span></div>
+                <div class="barcode">|||| | | ||| | ||</div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-print" onclick="ejecutarImpresion()">Imprimir Etiqueta</button>
+                <button class="btn-close" onclick="cerrarModal()">Cerrar</button>
             </div>
         </div>
     </div>
@@ -338,8 +388,44 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
                 <td>${salida.toFixed(1)} g</td>
                 <td>${dif.toFixed(1)} g</td>
                 <td><span class="status-badge ${badgeClass}">${badgeText}</span></td>
+                <td><button class="btn-recibo" onclick="abrirRecibo('${lote}', ${entrada}, ${salida}, ${dif}, '${badgeText}')">Ver Recibo</button></td>
             `;
             tbody.insertBefore(row, tbody.firstChild);
+        }
+
+        // --- FUNCIONES DEL MODAL DE IMPRESIÓN ---
+        function abrirRecibo(lote, entrada, salida, dif, dictamen) {
+            document.getElementById("lblLote").textContent = lote;
+            document.getElementById("lblEntrada").textContent = entrada.toFixed(1) + " g";
+            document.getElementById("lblSalida").textContent = salida.toFixed(1) + " g";
+            document.getElementById("lblDif").textContent = dif.toFixed(1) + " g";
+            document.getElementById("lblDictamen").textContent = dictamen;
+            
+            let colorDictamen = (dictamen === "Aprobado") ? "#16a34a" : "#dc2626";
+            document.getElementById("lblDictamen").style.color = colorDictamen;
+
+            // Obtener fecha y hora en tiempo real desde el navegador
+            let ahora = new Date();
+            let fechaStr = ahora.toLocaleDateString() + " " + ahora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            document.getElementById("lblFecha").textContent = fechaStr;
+
+            document.getElementById("modalTicket").style.display = "flex";
+        }
+
+        function cerrarModal() {
+            document.getElementById("modalTicket").style.display = "none";
+        }
+
+        function ejecutarImpresion() {
+            window.print();
+        }
+
+        // Cerrar modal al hacer clic fuera del recuadro blanco
+        window.onclick = function(event) {
+            let modal = document.getElementById("modalTicket");
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
         }
 
         connection.onclose = function() { setTimeout(() => location.reload(), 3000); };
