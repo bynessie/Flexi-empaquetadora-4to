@@ -59,7 +59,7 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Conveyor System - Calzado</title>
+    <title>Flexi Sistema Automático de Recolección y Empaquetado</title>
     <style>
         /* --- ESTILOS GENERALES (PALETA BLANCO Y ROJO) --- */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
@@ -69,57 +69,66 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
         h1 { font-size: 2.2rem; color: #0f172a; }
         .sub { color: #64748b; font-size: 1rem; margin-top: 5px; font-weight: 500; }
 
-        .dashboard { display: grid; grid-template-columns: 3fr 1fr; gap: 20px; max-width: 1300px; margin: auto; }
+        .dashboard { display: grid; grid-template-columns: 3fr 1fr; gap: 20px; max-width: 1300px; margin: auto; align-items: start; }
         .left-panel { display: flex; flex-direction: column; gap: 20px; }
+        .right-panel { position: sticky; top: 20px; }
         
-        /* --- BANDA TRANSPORTADORA SIMULADA --- */
-        .conveyor-container { background: #ffffff; border-radius: 20px; padding: 30px; border: 2px solid #e2e8f0; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .conveyor-belt { height: 80px; background: #e2e8f0; border-radius: 40px; position: relative; display: flex; align-items: center; overflow: hidden; border: 4px solid #cbd5e1; }
+        /* --- BANDA TRANSPORTADORA --- */
+        .conveyor-container { background: #ffffff; border-radius: 20px; padding: 35px 110px 35px 35px; border: 2px solid #e2e8f0; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: visible; }
+        .conveyor-belt { height: 80px; background: #e2e8f0; border-radius: 40px; position: relative; display: flex; align-items: center; overflow: hidden; border: 4px solid #cbd5e1; z-index: 1; }
         
         .divider { position: absolute; top: 0; width: 4px; height: 100%; background: #94a3b8; opacity: 0.5; }
-        .div-1 { left: 25%; } .div-2 { left: 50%; } .div-3 { left: 75%; }
+        .div-1 { left: 25%; } .div-2 { left: 55%; } .div-3 { left: 78%; }
 
-        .zone-label { position: absolute; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #dc2626; top: 5px; }
-        .z-in { left: 40px; } .z-out { right: 140px; } .z-seal { right: 25px; }
+        .zone-label { position: absolute; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #dc2626; top: 8px; z-index: 2; }
+        .z-in { left: 45px; } .z-out { left: 525px; } .z-seal { right: 35px; }
 
-        /* Contenedor del calzado móvil con detalles en rojo */
-        .shoe-box { width: 55px; height: 45px; background: #ffffff; border-radius: 6px; position: absolute; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; transition: left 0.4s ease-out; border: 2px solid #dc2626; box-shadow: 0 4px 8px rgba(220, 38, 38, 0.15); }
+        /* Contenedor de lote móvil */
+        .shoe-box { width: 65px; height: 45px; background: #ffffff; border-radius: 6px; position: absolute; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: #dc2626; transition: left 0.4s ease-out; border: 2px solid #dc2626; box-shadow: 0 4px 8px rgba(220, 38, 38, 0.15); z-index: 3; }
         
         /* Sellador Automático */
-        .sealer-machine { position: absolute; right: 20px; top: 15px; width: 70px; height: 110px; background: #f1f5f9; border-radius: 10px; border: 2px solid #cbd5e1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.8rem; text-align: center; font-weight: bold; color: #475569; }
+        .sealer-machine { position: absolute; right: 25px; top: 20px; width: 75px; height: 110px; background: #f1f5f9; border-radius: 10px; border: 2px solid #cbd5e1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.8rem; text-align: center; font-weight: bold; color: #475569; z-index: 10; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .sealer-piston { width: 100%; height: 15px; background: #dc2626; position: absolute; top: 0; transition: transform 0.2s; }
         .sealing .sealer-piston { transform: translateY(35px); background: #b91c1c; }
 
-        /* --- MONITOR DE PROCESO (TARJETAS BLANCAS) --- */
+        /* --- MONITOR DE PROCESO --- */
         .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         .card { background: #ffffff; border-radius: 15px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
         .label { font-size: 0.85rem; color: #64748b; text-transform: uppercase; font-weight: 600; }
         .value { font-size: 1.8rem; font-weight: bold; margin-top: 5px; color: #0f172a; }
         
-        /* Enfoque en Rojo para Resaltar Valores Clave */
         .rojo-detalle { color: #dc2626; }
         .gris-obscuro { color: #334155; }
+        .verde-ok { color: #16a34a; }
 
-        /* --- TORRE DE LUCES INDUSTRIAL --- */
-        .tower-card { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ffffff; border-radius: 15px; padding: 25px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); height: 100%; }
+        /* --- SECCIÓN HISTORIAL DE LOTES --- */
+        .history-card { background: #ffffff; border-radius: 15px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-top: 20px; }
+        .history-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; text-align: left; }
+        .history-table th { background: #f1f5f9; color: #475569; padding: 10px; font-weight: 600; border-bottom: 2px solid #cbd5e1; }
+        .history-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; color: #334155; }
+        .status-badge { font-weight: bold; padding: 3px 8px; border-radius: 5px; text-transform: uppercase; font-size: 0.8rem; }
+        .badge-ok { background: #dcfce7; color: #16a34a; }
+        .badge-error { background: #fee2e2; color: #dc2626; }
+
+        /* --- RECUADRO FIJO DEL SEMÁFORO --- */
+        .tower-card { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ffffff; border-radius: 15px; padding: 25px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); height: 380px; width: 100%; max-height: 380px; }
         .light-tower { width: 90px; background: #f1f5f9; padding: 18px; border-radius: 15px; display: flex; flex-direction: column; gap: 15px; border: 4px solid #cbd5e1; }
         .light { width: 54px; height: 54px; border-radius: 50%; background: #cbd5e1; opacity: 0.2; transition: all 0.2s; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
         
-        /* Efectos de Activación de Luces Luminosas */
         .light.active.green { background: #16a34a; opacity: 1; box-shadow: 0 0 25px #16a34a, inset 0 0 10px #ffffff80; }
         .light.active.yellow { background: #ca8a04; opacity: 1; box-shadow: 0 0 25px #ca8a04, inset 0 0 10px #ffffff80; }
         .light.active.red { background: #dc2626; opacity: 1; box-shadow: 0 0 35px #dc2626, inset 0 0 10px #ffffff80; }
         
-        #estadoText { margin-top: 25px; font-weight: bold; font-size: 1.5rem; text-align: center; color: #0f172a; min-height: 40px; text-transform: uppercase; letter-spacing: 0.5px; }
+        #estadoText { margin-top: 20px; font-weight: bold; font-size: 1.2rem; text-align: center; color: #0f172a; min-height: 40px; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        /* --- IMPRESORA DE TICKETS EN COLOR SUAVE --- */
+        /* --- IMPRESORA DE TICKETS --- */
         .ticket-box { background: #ffffff; color: #1e293b; padding: 15px; border-radius: 10px; font-family: 'Courier New', monospace; font-size: 0.8rem; margin-top: 15px; border-left: 5px solid #dc2626; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>📦 Sistema Automatizado de Calzado</h1>
+        <h1>Flexi Sistema Automático de Recolección y Empaquetado</h1>
         <div class="sub">Monitoreo del Conveyor, Control de Calidad y Sellado</div>
     </header>
 
@@ -134,7 +143,7 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
                     <div class="divider div-1"></div>
                     <div class="divider div-2"></div>
                     <div class="divider div-3"></div>
-                    <div class="shoe-box" id="shoeBox" style="left: -60px;">👟</div>
+                    <div class="shoe-box" id="shoeBox" style="left: -70px;">LOTE-1</div>
                 </div>
 
                 <div class="sealer-machine" id="sealer">
@@ -144,29 +153,46 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
             </div>
 
             <div class="grid-stats">
-                <div class="card"><div class="label">⚖️ Peso Entrada</div><div id="entrada" class="value gris-obscuro">0.0 g</div></div>
-                <div class="card"><div class="label">⚖️ Peso Salida</div><div id="salida" class="value gris-obscuro">0.0 g</div></div>
-                <div class="card"><div class="label">📏 Diferencia</div><div id="diferencia" class="value rojo-detalle">0.0 g</div></div>
-                <div class="card"><div class="label">🆔 Identificador Lote</div><div class="value gris-obscuro" style="font-size:1.5rem; padding-top:4px;">LOTE-2026A</div></div>
-                <div class="card"><div class="label">📦 Unidades Procesadas</div><div id="total" class="value gris-obscuro">0</div></div>
-                <div class="card"><div class="label">✅ Empaques OK</div><div id="ok" class="value gris-obscuro">0</div></div>
-                <div class="card"><div class="label">❌ Empaques Bloqueados</div><div id="error" class="value rojo-detalle">0</div></div>
+                <div class="card"><div class="label">Peso Entrada</div><div id="entrada" class="value gris-obscuro">0.0 g</div></div>
+                <div class="card"><div class="label">Peso Salida</div><div id="salida" class="value gris-obscuro">0.0 g</div></div>
+                <div class="card"><div class="label">Diferencia</div><div id="diferencia" class="value rojo-detalle">0.0 g</div></div>
+                <div class="card"><div class="label">Lote en Curso</div><div id="loteActual" class="value rojo-detalle">LOTE-1</div></div>
+                <div class="card"><div class="label">Unidades Procesadas</div><div id="total" class="value gris-obscuro">0</div></div>
+                <div class="card"><div class="label">Empaques OK</div><div id="ok" class="value verde-ok">0</div></div>
+                <div class="card"><div class="label">Empaques Bloqueados</div><div id="error" class="value rojo-detalle">0</div></div>
             </div>
 
             <div class="ticket-box" id="ticket">
                 <div style="font-weight:bold; color:#dc2626;">====== REGISTRO DE EMPAQUE ======</div>
-                <div>LOTE: LOTE-2026A</div>
+                <div id="tk-id">LOTE: LOTE-0</div>
                 <div id="tk-p1">PESO ENTRADA: 0.0g</div>
                 <div id="tk-p2">PESO SALIDA: 0.0g</div>
                 <div id="tk-dif">DIFERENCIA: 0.0g</div>
                 <div id="tk-status" style="font-weight:bold;">ESTADO: -</div>
                 <div style="color:#dc2626;">==================================</div>
             </div>
+
+            <div class="history-card">
+                <div class="label" style="color: #dc2626; font-size: 1rem;">Historial de Lotes Procesados</div>
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Identificador</th>
+                            <th>Peso Entrada</th>
+                            <th>Peso Salida</th>
+                            <th>Diferencia</th>
+                            <th>Dictamen Final</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <div class="right-panel">
             <div class="tower-card">
-                <div class="label" style="margin-bottom: 20px; color:#dc2626;">Torre de Luces</div>
+                <div class="label" style="margin-bottom: 15px; color:#dc2626; font-size:0.9rem;">Torre de Luces</div>
                 <div class="light-tower">
                     <div class="light red" id="lightRed"></div>
                     <div class="light yellow" id="lightYellow"></div>
@@ -180,6 +206,9 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
     <script>
         let connection = new WebSocket('ws://' + location.hostname + ':81/');
         let totalAnterior = 0;
+        let estadoAnimacion = "INICIO"; 
+        let ultimoEstadoSemaforo = "green"; 
+        let ultimoTextoSemaforo = "OPERACIÓN NORMAL";
 
         connection.onmessage = function(e) {
             let data = JSON.parse(e.data);
@@ -191,43 +220,70 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
             document.getElementById("ok").textContent = data.ok;
             document.getElementById("error").textContent = data.error;
 
+            let nombreLote = "LOTE-" + (data.total + 1);
+            document.getElementById("loteActual").textContent = nombreLote;
+
             let shoe = document.getElementById("shoeBox");
             let sealer = document.getElementById("sealer");
-
-            if (data.entradaLive > 5) {
+            
+            if (data.entradaLive > 5 && estadoAnimacion !== "PROCESANDO") {
+                estadoAnimacion = "ENTRADA";
                 shoe.style.left = "40px"; 
+                shoe.textContent = "LOTE-" + (data.total + 1);
                 actualizarLuces("yellow", "VERIFICANDO ENTRADA");
             } 
-            else if (data.salidaLive > 5) {
-                shoe.style.left = "630px"; 
+            else if (data.salidaLive > 5 && estadoAnimacion !== "PROCESANDO") {
+                estadoAnimacion = "SALIDA";
+                shoe.style.left = "520px"; 
+                shoe.textContent = "LOTE-" + (data.total + 1);
                 actualizarLuces("yellow", "VERIFICANDO SALIDA");
             } 
             else if (data.estado === "OK" && data.total > totalAnterior) {
-                shoe.style.left = "830px";
+                estadoAnimacion = "PROCESANDO";
+                shoe.style.left = "640px";
+                
+                ultimoEstadoSemaforo = "green";
+                ultimoTextoSemaforo = "LOTE ANTERIOR: APROBADO";
                 actualizarLuces("green", "APROBADO - SELLANDO");
                 sealer.classList.add("sealing");
                 
+                let loteFinalizado = "LOTE-" + data.total;
                 totalAnterior = data.total;
+                
                 setTimeout(() => {
                     sealer.classList.remove("sealing");
-                    shoe.style.left = "-60px"; 
-                    imprimirTicketVirtual(data);
+                    shoe.style.left = "-70px"; 
+                    imprimirTicketVirtual(data, loteFinalizado);
+                    agregarAlHistorialHTML(loteFinalizado, data.entrada, data.salida, data.diferencia, "OK");
+                    estadoAnimacion = "INICIO";
+                    actualizarLuces(ultimoEstadoSemaforo, ultimoTextoSemaforo);
                 }, 1200);
             } 
             else if (data.estado === "ERROR" && data.total > totalAnterior) {
-                shoe.style.left = "630px"; 
-                actualizarLuces("red", "ERROR: BLOQUEADO");
-                imprimirTicketVirtual(data);
+                estadoAnimacion = "PROCESANDO";
+                shoe.style.left = "520px"; 
                 
+                ultimoEstadoSemaforo = "red";
+                ultimoTextoSemaforo = "LOTE ANTERIOR: RECHAZADO";
+                actualizarLuces("red", "ERROR: BLOQUEADO");
+                
+                let loteFinalizado = "LOTE-" + data.total;
                 totalAnterior = data.total;
+                
+                imprimirTicketVirtual(data, loteFinalizado);
+                agregarAlHistorialHTML(loteFinalizado, data.entrada, data.salida, data.diferencia, "ERROR");
+                
                 setTimeout(() => {
-                    shoe.style.left = "-60px"; 
+                    shoe.style.left = "-70px"; 
+                    estadoAnimacion = "INICIO";
+                    actualizarLuces(ultimoEstadoSemaforo, ultimoTextoSemaforo);
                 }, 3500);
             } 
-            else if (data.entradaLive <= 5 && data.salidaLive <= 5) {
-                if(!sealer.classList.contains("sealing") && data.estado === "ESPERANDO") {
-                    shoe.style.left = "-60px";
-                    actualizarLuces("green", "OPERACIÓN NORMAL");
+            else if (data.entradaLive <= 5 && data.salidaLive <= 5 && estadoAnimacion === "INICIO") {
+                if(!sealer.classList.contains("sealing")) {
+                    shoe.style.left = "-70px";
+                    shoe.textContent = "LOTE-" + (data.total + 1);
+                    actualizarLuces(ultimoEstadoSemaforo, ultimoTextoSemaforo);
                 }
             }
         };
@@ -250,11 +306,13 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
             document.getElementById("estadoText").textContent = texto;
         }
 
-        function imprimirTicketVirtual(data) {
+        function imprimirTicketVirtual(data, loteId) {
+            document.getElementById("tk-id").textContent = "LOTE: " + loteId;
             document.getElementById("tk-p1").textContent = "PESO ENTRADA: " + data.entrada.toFixed(1) + "g";
             document.getElementById("tk-p2").textContent = "PESO SALIDA: " + data.salida.toFixed(1) + "g";
             document.getElementById("tk-dif").textContent = "DIFERENCIA: " + data.diferencia.toFixed(1) + "g";
-            document.getElementById("tk-status").textContent = "ESTADO: " + data.estado;
+            document.getElementById("tk-status").textContent = "ESTADO: " + (data.estado === "OK" ? "APROBADO" : "RECHAZADO");
+            
             if(data.estado === "OK") {
                 document.getElementById("tk-status").style.color = "#16a34a";
             } else {
@@ -265,6 +323,23 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
             tk.style.display = "block";
             tk.style.opacity = 0.5;
             setTimeout(() => tk.style.opacity = 1, 300);
+        }
+
+        function agregarAlHistorialHTML(lote, entrada, salida, dif, resultado) {
+            let tbody = document.getElementById("historyBody");
+            let row = document.createElement("tr");
+            
+            let badgeClass = resultado === "OK" ? "badge-ok" : "badge-error";
+            let badgeText = resultado === "OK" ? "Aprobado" : "Rechazado";
+
+            row.innerHTML = `
+                <td><strong>${lote}</strong></td>
+                <td>${entrada.toFixed(1)} g</td>
+                <td>${salida.toFixed(1)} g</td>
+                <td>${dif.toFixed(1)} g</td>
+                <td><span class="status-badge ${badgeClass}">${badgeText}</span></td>
+            `;
+            tbody.insertBefore(row, tbody.firstChild);
         }
 
         connection.onclose = function() { setTimeout(() => location.reload(), 3000); };
@@ -279,16 +354,13 @@ void paginaPrincipal() {
   server.send_P(200, "text/html", paginaHTML);
 }
 
-void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
-  // Canales unidireccionales del ESP32 a la Web
-}
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {}
 
 // ================= SETUP =================
 
 void setup() {
   Serial.begin(115200);
 
-  // Inicialización de Balanzas
   balanza1.begin(DOUT1, SCK1);
   balanza1.set_scale(factor1);
   balanza1.tare();
@@ -297,7 +369,6 @@ void setup() {
   balanza2.set_scale(factor2);
   balanza2.tare();
 
-  // Conexión WiFi
   WiFi.begin(ssid, password);
   Serial.print("Conectando a WiFi");
   while(WiFi.status() != WL_CONNECTED){
@@ -308,7 +379,6 @@ void setup() {
   Serial.print("IP del Servidor: ");
   Serial.println(WiFi.localIP());
 
-  // Rutas HTTP e inicio de servidores
   server.on("/", paginaPrincipal);
   server.begin();
 
@@ -322,7 +392,6 @@ void loop() {
   server.handleClient();
   webSocket.loop();
 
-  // Lectura síncrona NO BLOQUEANTE de celdas de carga
   if (balanza1.is_ready()) {
     pesoActualEntrada = (balanza1.read() - balanza1.get_offset()) / factor1;
   }
@@ -330,11 +399,10 @@ void loop() {
     pesoActualSalida = (balanza2.read() - balanza2.get_offset()) / factor2;
   }
 
-  // Máquina de estados de muestreo y validación (Cada 20ms)
   if (millis() - ultimoMuestreo >= 20) {
     ultimoMuestreo = millis();
 
-    // ===== LÓGICA: ENTRADA =====
+    // LÓGICA: ENTRADA
     if (!piezaEntrada) {
       if (pesoActualEntrada > UMBRAL_DETECCION) {
         piezaEntrada = true;
@@ -351,7 +419,7 @@ void loop() {
       }
     }
 
-    // ===== LÓGICA: SALIDA =====
+    // LÓGICA: SALIDA
     if (!piezaSalida) {
       if (pesoActualSalida > UMBRAL_DETECCION) {
         piezaSalida = true;
@@ -365,7 +433,6 @@ void loop() {
         pesoSalida = pesoMaxSalida;
         piezaSalida = false;
 
-        // Evaluación diferencial de calidad física
         diferencia = abs(pesoEntrada - pesoSalida);
         totalPiezas++;
 
@@ -380,7 +447,6 @@ void loop() {
     }
   }
 
-  // TRANSPORTE ULTRA RÁPIDO DE DATOS (Broadcast WebSockets cada 40ms)
   if (millis() - ultimoEnvioWS >= 40) {
     ultimoEnvioWS = millis();
     
