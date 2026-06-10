@@ -136,7 +136,41 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
         .etiqueta-print { border: 3px double #000; padding: 15px; background: white; font-family: 'Courier New', monospace; text-align: left; color: black; margin-bottom: 15px; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); }
         .etiqueta-print h2 { text-align: center; font-size: 1.3rem; border-bottom: 2px dashed #000; padding-bottom: 5px; margin-bottom: 10px; color: black; }
         .etiqueta-print .item { margin: 6px 0; font-size: 0.9rem; }
-        .etiqueta-print .barcode { text-align: center; font-size: 1.8rem; letter-spacing: 3px; margin-top: 15px; font-family: 'Arial', sans-serif; font-weight: bold; border-top: 1px dashed #000; padding-top: 8px;}
+        
+        /* CÓDIGO DE BARRAS ULTRA REALISTA POR CSS GRADIENT */
+        .barcode-container {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-top: 1px dashed #000;
+            padding-top: 12px;
+        }
+        .real-barcode {
+            width: 220px;
+            height: 50px;
+            /* Patrón de barras reales simulando codificación industrial standard */
+            background: linear-gradient(90deg, 
+                #000 0%, #000 2%, #fff 2%, #fff 4%, #000 4%, #000 5%, #fff 5%, #fff 8%,
+                #000 8%, #000 12%, #fff 12%, #fff 13%, #000 13%, #000 14%, #fff 14%, #fff 18%,
+                #000 18%, #000 19%, #fff 19%, #fff 22%, #000 22%, #000 26%, #fff 26%, #fff 28%,
+                #000 28%, #000 29%, #fff 29%, #fff 32%, #000 32%, #000 33%, #fff 33%, #fff 37%,
+                #000 37%, #000 41%, #fff 41%, #fff 43%, #000 43%, #000 44%, #fff 44%, #fff 48%,
+                #000 48%, #000 52%, #fff 52%, #fff 55%, #000 55%, #000 57%, #fff 57%, #fff 58%,
+                #000 58%, #000 62%, #fff 62%, #fff 64%, #000 64%, #000 65%, #fff 65%, #fff 69%,
+                #000 69%, #000 70%, #fff 70%, #fff 74%, #000 74%, #000 78%, #fff 78%, #fff 80%,
+                #000 80%, #000 81%, #fff 81%, #fff 85%, #000 85%, #000 89%, #fff 89%, #fff 91%,
+                #000 91%, #000 95%, #fff 95%, #fff 97%, #000 97%, #000 100%
+            );
+        }
+        .barcode-text {
+            font-family: 'Arial', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 4px;
+            margin-top: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
         
         .modal-actions { display: flex; gap: 10px; justify-content: center; }
         .btn-print { background-color: #16a34a; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
@@ -244,7 +278,11 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
                 <div class="item"><strong>DIFERENCIA:</strong> <span id="lblDif">0.0 g</span></div>
                 <div class="item">----------------------------</div>
                 <div class="item"><strong>DICTAMEN:</strong> <span id="lblDictamen">-</span></div>
-                <div class="barcode">|||| | | ||| | ||</div>
+                
+                <div class="barcode-container">
+                    <div class="real-barcode"></div>
+                    <div class="barcode-text" id="lblBarcodeNum">000000000000</div>
+                </div>
             </div>
             <div class="modal-actions">
                 <button class="btn-print" onclick="ejecutarImpresion()">Imprimir Etiqueta</button>
@@ -408,6 +446,11 @@ const char paginaHTML[] PROGMEM = R"rawliteral(
             let ahora = new Date();
             let fechaStr = ahora.toLocaleDateString() + " " + ahora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             document.getElementById("lblFecha").textContent = fechaStr;
+
+            // GENERACIÓN DE CÓDIGO ALFANUMÉRICO DINÁMICO PARA EL RECIBO (Ej. LOTE-5 -> FLX-00005)
+            let numeroLote = lote.replace("LOTE-", "");
+            let codigoFormateado = "FLX-" + numeroLote.padStart(5, '0');
+            document.getElementById("lblBarcodeNum").textContent = codigoFormateado;
 
             document.getElementById("modalTicket").style.display = "flex";
         }
