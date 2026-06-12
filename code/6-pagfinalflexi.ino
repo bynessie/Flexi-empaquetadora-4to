@@ -22,7 +22,7 @@ HX711 balanza1;
 HX711 balanza2;
 
 float factor1 = 214.3;
-float factor2 = -225.0;
+float factor2 = 225.0;
 
 // ================= PARÁMETROS DE VALIDACIÓN =================
 const float UMBRAL_DETECCION = 5.0;  // Peso mínimo para detectar un calzado (en gramos)
