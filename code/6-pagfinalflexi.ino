@@ -22,7 +22,7 @@ HX711 balanza1;
 HX711 balanza2;
 
 float factor1 = 214.3;
-float factor2 = 225.0;
+float factor2 = -225.0;
 
 // ================= PARÁMETROS DE VALIDACIÓN =================
 const float UMBRAL_DETECCION = 5.0;  // Peso mínimo para detectar un calzado (en gramos)
@@ -558,7 +558,6 @@ void procesarLogin() {
 }
 
 void procesarLogout() {
-  // CAMBIO CLAVE: Al cerrar sesión se fuerza el paro automático del conveyor/lógica de pesado
   programaIniciado = false;
   estado = "ESPERANDO";
   Serial.println("Sesión cerrada. Programa pausado automáticamente por seguridad.");
@@ -575,8 +574,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
   if (type == WStype_TEXT) {
     String comando = String((char*)payload);
     if (comando == "START") {
+      // CAMBIO CLAVE: Al arrancar el sistema, forzamos un tare() dinámico para limpiar lecturas parásitas
+      if (balanza1.is_ready()) balanza1.tare(10); // Promedia 10 lecturas rápidas para tarar
+      if (balanza2.is_ready()) balanza2.tare(10);
+      
       programaIniciado = true;
-      Serial.println("Programa INICIADO desde interfaz web.");
+      Serial.println("Celdas taradas a 0g de manera dinámica. Programa INICIADO.");
     } else if (comando == "STOP") {
       programaIniciado = false;
       Serial.println("Programa DETENIDO desde interfaz web.");
@@ -629,12 +632,18 @@ void loop() {
   server.handleClient();
   webSocket.loop();
 
-  // 1. Obtención de lecturas continuas (Live Metrics)
-  if (balanza1.is_ready()) {
-    pesoActualEntrada = (balanza1.read() - balanza1.get_offset()) / factor1;
-  }
-  if (balanza2.is_ready()) {
-    pesoActualSalida = (balanza2.read() - balanza2.get_offset()) / factor2;
+  // 1. Obtención de lecturas continuas o bloqueo en 0
+  if (programaIniciado) {
+    if (balanza1.is_ready()) {
+      pesoActualEntrada = (balanza1.read() - balanza1.get_offset()) / factor1;
+    }
+    if (balanza2.is_ready()) {
+      pesoActualSalida = (balanza2.read() - balanza2.get_offset()) / factor2;
+    }
+  } else {
+    // CAMBIO CLAVE: Si el programa está en pausa, la interfaz reportará exactamente 0.0g
+    pesoActualEntrada = 0.0;
+    pesoActualSalida = 0.0;
   }
 
   // 2. Lógica de validación (Solo si el programa ha sido iniciado)
@@ -690,7 +699,7 @@ void loop() {
     estado = "ESPERANDO";
   }
 
-  // 3. Envío de datos por WebSockets (Incluye la clave "progIniciado")
+  // 3. Envío de datos por WebSockets 
   if (millis() - ultimoEnvioWS >= 40) {
     ultimoEnvioWS = millis();
     
